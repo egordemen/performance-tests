@@ -11,6 +11,7 @@ import httpx
 from clients.http.client import HTTPClient
 
 OPEN_CREDIT_CARD_ACCOUNT_ENDPOINT = "/api/v1/accounts/open-credit-card-account"
+OPEN_DEBIT_CARD_ACCOUNT_ENDPOINT = "/api/v1/accounts/open-debit-card-account"
 
 
 class OpenCreditCardAccountRequestDict(TypedDict):
@@ -25,6 +26,26 @@ class OpenCreditCardAccountRequestDict(TypedDict):
 
 class OpenCreditCardAccountResponseDict(TypedDict):
     """Структура ответа на открытие кредитного счёта.
+
+    Атрибуты:
+        account: Объект открытого счёта.
+    """
+
+    account: dict
+
+
+class OpenDebitCardAccountRequestDict(TypedDict):
+    """Структура запроса на открытие дебетового счёта.
+
+    Атрибуты:
+        userId: Идентификатор пользователя, для которого открывается счёт.
+    """
+
+    userId: str
+
+
+class OpenDebitCardAccountResponseDict(TypedDict):
+    """Структура ответа на открытие дебетового счёта.
 
     Атрибуты:
         account: Объект открытого счёта.
@@ -62,6 +83,31 @@ class AccountsGatewayHTTPClient(HTTPClient):
 
         with self._client() as client:
             response = client.post(self._url(OPEN_CREDIT_CARD_ACCOUNT_ENDPOINT), json=request)
+            response.raise_for_status()
+            return response.json()
+
+    def open_debit_card_account(
+        self, user_id: str
+    ) -> OpenDebitCardAccountResponseDict:
+        """Открывает дебетовый счёт для пользователя.
+
+        Выполняет POST-запрос к эндпоинту
+        ``/api/v1/accounts/open-debit-card-account`` для открытия дебетового
+        счёта с привязанными картами.
+
+        Аргументы:
+            user_id: Идентификатор пользователя, для которого открывается счёт.
+
+        Возвращает:
+            OpenDebitCardAccountResponseDict: JSON-ответ сервера с данными
+                открытого счёта.
+        """
+        request: OpenDebitCardAccountRequestDict = {"userId": user_id}
+
+        with self._client() as client:
+            response = client.post(
+                self._url(OPEN_DEBIT_CARD_ACCOUNT_ENDPOINT), json=request
+            )
             response.raise_for_status()
             return response.json()
 
