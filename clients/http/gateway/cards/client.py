@@ -10,9 +10,6 @@ from typing import TypedDict
 import httpx
 from clients.http.client import HTTPClient
 
-ISSUE_VIRTUAL_CARD_ENDPOINT = "/api/v1/cards/issue-virtual-card"
-ISSUE_PHYSICAL_CARD_ENDPOINT = "/api/v1/cards/issue-physical-card"
-
 
 class IssueVirtualCardRequest(TypedDict):
     """Структура запроса на выпуск виртуальной карты.
@@ -47,6 +44,16 @@ class CardsGatewayHTTPClient(HTTPClient):
     Наследует базовую логику работы с HTTP-запросами от :class:`HTTPClient`.
     """
 
+    def __init__(self, client: httpx.Client, base_url: str) -> None:
+        """Инициализирует клиент для работы с картами.
+
+        Аргументы:
+            client: Готовый экземпляр :class:`httpx.Client`,
+                настроенный вызывающим кодом.
+            base_url: Базовый URL сервиса (например, ``http://localhost:8003``).
+        """
+        super().__init__(client, base_url)
+
     def issue_virtual_card_api(self, request: IssueVirtualCardRequest) -> httpx.Response:
         """Выполняет POST-запрос на выпуск виртуальной карты.
 
@@ -60,11 +67,10 @@ class CardsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос выпуска виртуальной карты.
         """
-        with self._client() as client:
-            return client.post(
-                self._url(ISSUE_VIRTUAL_CARD_ENDPOINT),
-                json=request,
-            )
+        return self.client.post(
+            f"{self.base_url}/api/v1/cards/issue-virtual-card",
+            json=request,
+        )
 
     def issue_physical_card_api(self, request: IssuePhysicalCardRequest) -> httpx.Response:
         """Выполняет POST-запрос на выпуск физической карты.
@@ -79,16 +85,7 @@ class CardsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос выпуска физической карты.
         """
-        with self._client() as client:
-            return client.post(
-                self._url(ISSUE_PHYSICAL_CARD_ENDPOINT),
-                json=request,
-            )
-
-    def close(self) -> None:
-        """Закрывает HTTP-клиент и освобождает ресурсы.
-
-        Так как каждый запрос использует собственный контекстный менеджер
-        :class:`httpx.Client`, дополнительных действий не требуется.
-        """
-        return None
+        return self.client.post(
+            f"{self.base_url}/api/v1/cards/issue-physical-card",
+            json=request,
+        )

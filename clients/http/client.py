@@ -1,60 +1,45 @@
 """Базовый HTTP-клиент для взаимодействия с сервисами.
 
-Модуль содержит абстрактный класс :class:`HTTPClient`, который служит
-фундаментом для всех специализированных HTTP-клиентов, работающих
-с сервисами через http-gateway.
+Модуль содержит класс :class:`HTTPClient`, который служит
+обёрткой над :class:`httpx.Client` для работы с сервисами
+через http-gateway.
 """
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
 import httpx
 
 
-class HTTPClient(ABC):
-    """Абстрактный базовый класс HTTP-клиента.
+class HTTPClient:
+    """Базовый класс HTTP-клиента.
 
-    Инкапсулирует общую логику работы с HTTP-запросами: хранение базового
-    URL сервиса, управление таймаутом и создание синхронного клиента
-    :class:`httpx.Client`.
+    Хранит долгоживущий экземпляр :class:`httpx.Client`, переданный
+    извне, и предоставляет метод :meth:`post` для выполнения
+    POST-запросов.
 
     Атрибуты:
-        base_url (str): Базовый URL сервиса, к которому выполняются запросы.
-        timeout (float): Таймаут запроса в секундах.
+        client: Долгоживущий экземпляр :class:`httpx.Client`.
+        base_url: Базовый URL сервиса, к которому выполняются запросы.
     """
 
-    def __init__(self, base_url: str, timeout: float = 30.0) -> None:
+    def __init__(self, client: httpx.Client, base_url: str) -> None:
         """Инициализирует HTTP-клиент.
 
         Аргументы:
+            client: Готовый экземпляр :class:`httpx.Client`,
+                настроенный вызывающим кодом.
             base_url: Базовый URL сервиса (например, ``http://localhost:8003``).
-            timeout: Таймаут запроса в секундах. По умолчанию ``30.0``.
         """
+        self.client = client
         self.base_url = base_url.rstrip("/")
-        self.timeout = timeout
 
-    def _client(self) -> httpx.Client:
-        """Создаёт и возвращает синхронный HTTP-клиент.
-
-        Возвращает:
-            httpx.Client: Настроенный экземпляр клиента с заданным таймаутом.
-        """
-        return httpx.Client(timeout=self.timeout)
-
-    def _url(self, path: str) -> str:
-        """Формирует полный URL на основе базового URL и пути.
+    def post(self, url: str, **kwargs) -> httpx.Response:
+        """Выполняет POST-запрос.
 
         Аргументы:
-            path: Путь к эндпоинту (например, ``/api/v1/cards/issue-virtual-card``).
+            url: URL запроса.
+            **kwargs: Дополнительные аргументы для :meth:`httpx.Client.post`.
 
         Возвращает:
-            str: Полный URL запроса.
+            httpx.Response: Ответ сервера.
         """
-        return f"{self.base_url}{path}"
-
-    @abstractmethod
-    def close(self) -> None:
-        """Закрывает HTTP-клиент и освобождает ресурсы.
-
-        Должен быть реализован в подклассах.
-        """
-        raise NotImplementedError
+        return self.client.post(url, **kwargs)
