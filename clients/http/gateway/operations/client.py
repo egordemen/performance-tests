@@ -11,17 +11,6 @@ from typing import TypedDict
 import httpx
 from clients.http.client import HTTPClient
 
-OPERATIONS_ENDPOINT = "/api/v1/operations"
-OPERATION_RECEIPT_ENDPOINT = "/api/v1/operations/operation-receipt"
-OPERATIONS_SUMMARY_ENDPOINT = "/api/v1/operations/operations-summary"
-MAKE_FEE_OPERATION_ENDPOINT = "/api/v1/operations/make-fee-operation"
-MAKE_TOP_UP_OPERATION_ENDPOINT = "/api/v1/operations/make-top-up-operation"
-MAKE_CASHBACK_OPERATION_ENDPOINT = "/api/v1/operations/make-cashback-operation"
-MAKE_TRANSFER_OPERATION_ENDPOINT = "/api/v1/operations/make-transfer-operation"
-MAKE_PURCHASE_OPERATION_ENDPOINT = "/api/v1/operations/make-purchase-operation"
-MAKE_BILL_PAYMENT_OPERATION_ENDPOINT = "/api/v1/operations/make-bill-payment-operation"
-MAKE_CASH_WITHDRAWAL_OPERATION_ENDPOINT = "/api/v1/operations/make-cash-withdrawal-operation"
-
 
 class GetOperationsQueryDict(TypedDict):
     """Структура query-параметров для получения списка операций.
@@ -51,7 +40,7 @@ class MakeOperationRequestDict(TypedDict):
     Атрибуты:
         status: Статус операции (например, ``IN_PROGRESS``).
         amount: Сумма операции.
-        cardId: Идентификатор карты, по которой выполняется операция.
+        cardId: Идентификатор карты, по которому выполняется операция.
         accountId: Идентификатор счёта, по которому выполняется операция.
     """
 
@@ -232,6 +221,16 @@ class OperationsGatewayHTTPClient(HTTPClient):
     Наследует базовую логику работы с HTTP-запросами от :class:`HTTPClient`.
     """
 
+    def __init__(self, client: httpx.Client, base_url: str) -> None:
+        """Инициализирует клиент для работы с операциями.
+
+        Аргументы:
+            client: Готовый экземпляр :class:`httpx.Client`,
+                настроенный вызывающим кодом.
+            base_url: Базовый URL сервиса (например, ``http://localhost:8003``).
+        """
+        super().__init__(client, base_url)
+
     def get_operation_api(self, operation_id: str) -> httpx.Response:
         """Выполняет GET-запрос на получение информации об операции.
 
@@ -244,8 +243,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера с информацией об операции.
         """
-        with self._client() as client:
-            return client.get(self._url(f"{OPERATIONS_ENDPOINT}/{operation_id}"))
+        return self.client.get(
+            f"{self.base_url}/api/v1/operations/{operation_id}"
+        )
 
     def get_operation_receipt_api(self, operation_id: str) -> httpx.Response:
         """Выполняет GET-запрос на получение чека по операции.
@@ -260,8 +260,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера с чеком по операции.
         """
-        with self._client() as client:
-            return client.get(self._url(f"{OPERATION_RECEIPT_ENDPOINT}/{operation_id}"))
+        return self.client.get(
+            f"{self.base_url}/api/v1/operations/operation-receipt/{operation_id}"
+        )
 
     def get_operations_api(self, query: GetOperationsQueryDict) -> httpx.Response:
         """Выполняет GET-запрос на получение списка операций счёта.
@@ -275,8 +276,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера со списком операций.
         """
-        with self._client() as client:
-            return client.get(self._url(OPERATIONS_ENDPOINT), params=query)
+        return self.client.get(
+            f"{self.base_url}/api/v1/operations", params=query
+        )
 
     def get_operations_summary_api(
         self, query: GetOperationsSummaryQueryDict
@@ -292,8 +294,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера со статистикой по операциям.
         """
-        with self._client() as client:
-            return client.get(self._url(OPERATIONS_SUMMARY_ENDPOINT), params=query)
+        return self.client.get(
+            f"{self.base_url}/api/v1/operations/operations-summary", params=query
+        )
 
     def make_fee_operation_api(
         self, request: MakeFeeOperationRequestDict
@@ -309,8 +312,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос создания операции.
         """
-        with self._client() as client:
-            return client.post(self._url(MAKE_FEE_OPERATION_ENDPOINT), json=request)
+        return self.client.post(
+            f"{self.base_url}/api/v1/operations/make-fee-operation", json=request
+        )
 
     def make_top_up_operation_api(
         self, request: MakeTopUpOperationRequestDict
@@ -326,8 +330,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос создания операции.
         """
-        with self._client() as client:
-            return client.post(self._url(MAKE_TOP_UP_OPERATION_ENDPOINT), json=request)
+        return self.client.post(
+            f"{self.base_url}/api/v1/operations/make-top-up-operation", json=request
+        )
 
     def make_cashback_operation_api(
         self, request: MakeCashbackOperationRequestDict
@@ -343,8 +348,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос создания операции.
         """
-        with self._client() as client:
-            return client.post(self._url(MAKE_CASHBACK_OPERATION_ENDPOINT), json=request)
+        return self.client.post(
+            f"{self.base_url}/api/v1/operations/make-cashback-operation", json=request
+        )
 
     def make_transfer_operation_api(
         self, request: MakeTransferOperationRequestDict
@@ -360,8 +366,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос создания операции.
         """
-        with self._client() as client:
-            return client.post(self._url(MAKE_TRANSFER_OPERATION_ENDPOINT), json=request)
+        return self.client.post(
+            f"{self.base_url}/api/v1/operations/make-transfer-operation", json=request
+        )
 
     def make_purchase_operation_api(
         self, request: MakePurchaseOperationRequestDict
@@ -377,8 +384,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос создания операции.
         """
-        with self._client() as client:
-            return client.post(self._url(MAKE_PURCHASE_OPERATION_ENDPOINT), json=request)
+        return self.client.post(
+            f"{self.base_url}/api/v1/operations/make-purchase-operation", json=request
+        )
 
     def make_bill_payment_operation_api(
         self, request: MakeBillPaymentOperationRequestDict
@@ -395,8 +403,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос создания операции.
         """
-        with self._client() as client:
-            return client.post(self._url(MAKE_BILL_PAYMENT_OPERATION_ENDPOINT), json=request)
+        return self.client.post(
+            f"{self.base_url}/api/v1/operations/make-bill-payment-operation", json=request
+        )
 
     def make_cash_withdrawal_operation_api(
         self, request: MakeCashWithdrawalOperationRequestDict
@@ -413,10 +422,9 @@ class OperationsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера на запрос создания операции.
         """
-        with self._client() as client:
-            return client.post(
-                self._url(MAKE_CASH_WITHDRAWAL_OPERATION_ENDPOINT), json=request
-            )
+        return self.client.post(
+            f"{self.base_url}/api/v1/operations/make-cash-withdrawal-operation", json=request
+        )
 
     def get_operation(self, operation_id: str) -> GetOperationResponseDict:
         """Получает информацию об операции по идентификатору.
@@ -665,24 +673,3 @@ class OperationsGatewayHTTPClient(HTTPClient):
         )
         response = self.make_cash_withdrawal_operation_api(request)
         return response.json()
-
-    def close(self) -> None:
-        """Закрывает HTTP-клиент и освобождает ресурсы.
-
-        Так как каждый запрос использует собственный контекстный менеджер
-        :class:`httpx.Client`, дополнительных действий не требуется.
-        """
-        return None
-
-def build_operations_gateway_http_client(
-    base_url: str = "http://localhost:8003",
-) -> OperationsGatewayHTTPClient:
-    """Create and return an instance of :class:`OperationsGatewayHTTPClient`.
-
-    Args:
-        base_url: Base URL of the http-gateway service.
-
-    Returns:
-        OperationsGatewayHTTPClient: Configured client for working with operations.
-    """
-    return OperationsGatewayHTTPClient(base_url=base_url)
