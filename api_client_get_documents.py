@@ -11,37 +11,42 @@
 
 from __future__ import annotations
 
-from clients.http.gateway.accounts.client import build_accounts_gateway_http_client
-from clients.http.gateway.documents.client import build_documents_gateway_http_client
-from clients.http.gateway.users.client import build_users_gateway_http_client
+import httpx
+
+from clients.http.gateway.accounts.client import AccountsGatewayHTTPClient
+from clients.http.gateway.documents.client import DocumentsGatewayHTTPClient
+from clients.http.gateway.users.client import UsersGatewayHTTPClient
+
+BASE_URL = "http://localhost:8003"
 
 
 def main() -> None:
     """Выполняет сценарий получения документов по счёту."""
-    # Инициализация API-клиентов.
-    users_client = build_users_gateway_http_client()
-    accounts_client = build_accounts_gateway_http_client()
-    documents_client = build_documents_gateway_http_client()
+    with httpx.Client(timeout=30.0) as client:
+        # Инициализация API-клиентов с общим httpx.Client.
+        users_client = UsersGatewayHTTPClient(client, BASE_URL)
+        accounts_client = AccountsGatewayHTTPClient(client, BASE_URL)
+        documents_client = DocumentsGatewayHTTPClient(client, BASE_URL)
 
-    # 1. Создание пользователя.
-    create_user_response = users_client.create_user()
-    print(f"Create user response: {create_user_response}")
+        # 1. Создание пользователя.
+        create_user_response = users_client.create_user()
+        print(f"Create user response: {create_user_response}")
 
-    user_id = create_user_response["user"]["id"]
+        user_id = create_user_response["user"]["id"]
 
-    # 2. Открытие кредитного счёта.
-    open_account_response = accounts_client.open_credit_card_account(user_id)
-    print(f"Open credit card account response: {open_account_response}")
+        # 2. Открытие кредитного счёта.
+        open_account_response = accounts_client.open_credit_card_account(user_id)
+        print(f"Open credit card account response: {open_account_response}")
 
-    account_id = open_account_response["account"]["id"]
+        account_id = open_account_response["account"]["id"]
 
-    # 3. Получение документа тарифа.
-    tariff_document = documents_client.get_tariff_document(account_id)
-    print(f"Get tariff document response: {tariff_document}")
+        # 3. Получение документа тарифа.
+        tariff_document = documents_client.get_tariff_document(account_id)
+        print(f"Get tariff document response: {tariff_document}")
 
-    # 4. Получение документа контракта.
-    contract_document = documents_client.get_contract_document(account_id)
-    print(f"Get contract document response: {contract_document}")
+        # 4. Получение документа контракта.
+        contract_document = documents_client.get_contract_document(account_id)
+        print(f"Get contract document response: {contract_document}")
 
 
 if __name__ == "__main__":

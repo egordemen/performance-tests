@@ -10,9 +10,6 @@ from typing import TypedDict
 import httpx
 from clients.http.client import HTTPClient
 
-OPEN_CREDIT_CARD_ACCOUNT_ENDPOINT = "/api/v1/accounts/open-credit-card-account"
-OPEN_DEBIT_CARD_ACCOUNT_ENDPOINT = "/api/v1/accounts/open-debit-card-account"
-
 
 class OpenCreditCardAccountRequestDict(TypedDict):
     """Структура запроса на открытие кредитного счёта.
@@ -63,6 +60,16 @@ class AccountsGatewayHTTPClient(HTTPClient):
     Наследует базовую логику работы с HTTP-запросами от :class:`HTTPClient`.
     """
 
+    def __init__(self, client: httpx.Client, base_url: str) -> None:
+        """Инициализирует клиент для работы со счетами.
+
+        Аргументы:
+            client: Готовый экземпляр :class:`httpx.Client`,
+                настроенный вызывающим кодом.
+            base_url: Базовый URL сервиса (например, ``http://localhost:8003``).
+        """
+        super().__init__(client, base_url)
+
     def open_credit_card_account(
         self, user_id: str
     ) -> OpenCreditCardAccountResponseDict:
@@ -81,10 +88,11 @@ class AccountsGatewayHTTPClient(HTTPClient):
         """
         request: OpenCreditCardAccountRequestDict = {"userId": user_id}
 
-        with self._client() as client:
-            response = client.post(self._url(OPEN_CREDIT_CARD_ACCOUNT_ENDPOINT), json=request)
-            response.raise_for_status()
-            return response.json()
+        response = self.client.post(
+            f"{self.base_url}/api/v1/accounts/open-credit-card-account", json=request
+        )
+        response.raise_for_status()
+        return response.json()
 
     def open_debit_card_account(
         self, user_id: str
@@ -104,31 +112,8 @@ class AccountsGatewayHTTPClient(HTTPClient):
         """
         request: OpenDebitCardAccountRequestDict = {"userId": user_id}
 
-        with self._client() as client:
-            response = client.post(
-                self._url(OPEN_DEBIT_CARD_ACCOUNT_ENDPOINT), json=request
-            )
-            response.raise_for_status()
-            return response.json()
-
-    def close(self) -> None:
-        """Закрывает HTTP-клиент и освобождает ресурсы.
-
-        Так как каждый запрос использует собственный контекстный менеджер
-        :class:`httpx.Client`, дополнительных действий не требуется.
-        """
-        return None
-
-
-def build_accounts_gateway_http_client(
-    base_url: str = "http://localhost:8003",
-) -> AccountsGatewayHTTPClient:
-    """Создаёт и возвращает экземпляр :class:`AccountsGatewayHTTPClient`.
-
-    Аргументы:
-        base_url: Базовый URL сервиса http-gateway.
-
-    Возвращает:
-        AccountsGatewayHTTPClient: Настроенный клиент для работы со счетами.
-    """
-    return AccountsGatewayHTTPClient(base_url=base_url)
+        response = self.client.post(
+            f"{self.base_url}/api/v1/accounts/open-debit-card-account", json=request
+        )
+        response.raise_for_status()
+        return response.json()

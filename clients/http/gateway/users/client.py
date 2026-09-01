@@ -8,9 +8,8 @@
 from __future__ import annotations
 import time
 from typing import TypedDict
+import httpx
 from clients.http.client import HTTPClient
-
-USERS_ENDPOINT = "/api/v1/users"
 
 
 class CreateUserRequestDict(TypedDict):
@@ -50,6 +49,16 @@ class UsersGatewayHTTPClient(HTTPClient):
     Наследует базовую логику работы с HTTP-запросами от :class:`HTTPClient`.
     """
 
+    def __init__(self, client: httpx.Client, base_url: str) -> None:
+        """Инициализирует клиент для работы с пользователями.
+
+        Аргументы:
+            client: Готовый экземпляр :class:`httpx.Client`,
+                настроенный вызывающим кодом.
+            base_url: Базовый URL сервиса (например, ``http://localhost:8003``).
+        """
+        super().__init__(client, base_url)
+
     def create_user(self) -> CreateUserResponseDict:
         """Создаёт пользователя и возвращает данные о нём.
 
@@ -70,27 +79,8 @@ class UsersGatewayHTTPClient(HTTPClient):
             "phoneNumber": "string",
         }
 
-        with self._client() as client:
-            response = client.post(self._url(USERS_ENDPOINT), json=request)
-            response.raise_for_status()
-            return response.json()
-
-    def close(self) -> None:
-        """Закрывает HTTP-клиент и освобождает ресурсы.
-
-        Так как каждый запрос использует собственный контекстный менеджер
-        :class:`httpx.Client`, дополнительных действий не требуется.
-        """
-        return None
-
-
-def build_users_gateway_http_client(base_url: str = "http://localhost:8003") -> UsersGatewayHTTPClient:
-    """Создаёт и возвращает экземпляр :class:`UsersGatewayHTTPClient`.
-
-    Аргументы:
-        base_url: Базовый URL сервиса http-gateway.
-
-    Возвращает:
-        UsersGatewayHTTPClient: Настроенный клиент для работы с пользователями.
-    """
-    return UsersGatewayHTTPClient(base_url=base_url)
+        response = self.client.post(
+            f"{self.base_url}/api/v1/users", json=request
+        )
+        response.raise_for_status()
+        return response.json()

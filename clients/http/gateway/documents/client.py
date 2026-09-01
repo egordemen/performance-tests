@@ -10,9 +10,6 @@ from typing import TypedDict
 import httpx
 from clients.http.client import HTTPClient
 
-TARIFF_DOCUMENT_ENDPOINT = "/api/v1/documents/tariff-document"
-CONTRACT_DOCUMENT_ENDPOINT = "/api/v1/documents/contract-document"
-
 
 class DocumentDict(TypedDict):
     """Структура документа, возвращаемого сервисом.
@@ -55,6 +52,16 @@ class DocumentsGatewayHTTPClient(HTTPClient):
     Наследует базовую логику работы с HTTP-запросами от :class:`HTTPClient`.
     """
 
+    def __init__(self, client: httpx.Client, base_url: str) -> None:
+        """Инициализирует клиент для работы с документами.
+
+        Аргументы:
+            client: Готовый экземпляр :class:`httpx.Client`,
+                настроенный вызывающим кодом.
+            base_url: Базовый URL сервиса (например, ``http://localhost:8003``).
+        """
+        super().__init__(client, base_url)
+
     def get_tariff_document_api(self, account_id: str) -> httpx.Response:
         """Выполняет GET-запрос на получение документа тарифа.
 
@@ -68,8 +75,9 @@ class DocumentsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера с документом тарифа.
         """
-        with self._client() as client:
-            return client.get(self._url(f"{TARIFF_DOCUMENT_ENDPOINT}/{account_id}"))
+        return self.client.get(
+            f"{self.base_url}/api/v1/documents/tariff-document/{account_id}"
+        )
 
     def get_contract_document_api(self, account_id: str) -> httpx.Response:
         """Выполняет GET-запрос на получение документа контракта.
@@ -84,8 +92,9 @@ class DocumentsGatewayHTTPClient(HTTPClient):
         Возвращает:
             httpx.Response: Ответ сервера с документом контракта.
         """
-        with self._client() as client:
-            return client.get(self._url(f"{CONTRACT_DOCUMENT_ENDPOINT}/{account_id}"))
+        return self.client.get(
+            f"{self.base_url}/api/v1/documents/contract-document/{account_id}"
+        )
 
     def get_tariff_document(self, account_id: str) -> GetTariffDocumentResponseDict:
         """Получает документ тарифа по счёту.
@@ -117,25 +126,3 @@ class DocumentsGatewayHTTPClient(HTTPClient):
         """
         response = self.get_contract_document_api(account_id)
         return response.json()
-
-    def close(self) -> None:
-        """Закрывает HTTP-клиент и освобождает ресурсы.
-
-        Так как каждый запрос использует собственный контекстный менеджер
-        :class:`httpx.Client`, дополнительных действий не требуется.
-        """
-        return None
-
-
-def build_documents_gateway_http_client(
-    base_url: str = "http://localhost:8003",
-) -> DocumentsGatewayHTTPClient:
-    """Создаёт и возвращает экземпляр :class:`DocumentsGatewayHTTPClient`.
-
-    Аргументы:
-        base_url: Базовый URL сервиса http-gateway.
-
-    Возвращает:
-        DocumentsGatewayHTTPClient: Настроенный клиент для работы с документами.
-    """
-    return DocumentsGatewayHTTPClient(base_url=base_url)
